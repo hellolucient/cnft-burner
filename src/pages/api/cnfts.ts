@@ -39,13 +39,14 @@ export default async function handler(
 
     // Filter out burned cNFTs
     const cnfts: CNFT[] = data.result.items
-      .filter((item: any) => !item.burnt && item.compression.compressed) // Only include non-burned compressed NFTs
+      .filter((item: any) => !item.burnt && item.compression.compressed)
       .map((item: any) => ({
         id: item.id,
         name: item.content.metadata.name,
         symbol: item.content.metadata.symbol,
         uri: item.content.links.image,
         collection: item.grouping.find((g: any) => g.group_key === 'collection')?.group_value,
+        collectionName: item.grouping.find((g: any) => g.group_key === 'collection')?.collection_metadata?.name || '',
         treeAddress: item.compression.tree,
         leafIndex: item.compression.leaf_id,
         assetHash: item.compression.asset_hash

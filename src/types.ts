@@ -4,6 +4,7 @@ export interface CNFT {
   symbol: string;
   uri: string;
   collection?: string;
+  collectionName?: string;
   treeAddress: string;
   leafIndex: number;
   assetHash: string;
