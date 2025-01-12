@@ -3,9 +3,10 @@ import type { AppProps } from "next/app";
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { NETWORK, RPC_ENDPOINT } from '@/utils/constants';
 import dynamic from 'next/dynamic';
+import { setupNetworkMonitoring } from '@/utils/monitor';
 
 // Import wallet adapter CSS
 require('@solana/wallet-adapter-react-ui/styles.css');
@@ -28,6 +29,12 @@ function App({ Component, pageProps }: AppProps) {
     ],
     [network]
   );
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      setupNetworkMonitoring();
+    }
+  }, []);
 
   return (
     <ConnectionProvider endpoint={RPC_ENDPOINT}>

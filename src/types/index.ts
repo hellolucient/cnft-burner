@@ -10,6 +10,8 @@ export interface CNFT {
   assetHash: string;
   treeAddress: string;
   leafIndex: number;
+  delegated: boolean;
+  delegate: string | null;
 }
 
 export interface BurnResult {

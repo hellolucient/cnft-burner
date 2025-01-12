@@ -46,7 +46,7 @@ const getSelectionButtonStyles = (selectionState: 'none' | 'partial' | 'all') =>
 };
 
 export const CNFTList: React.FC<CNFTListProps> = ({ cnfts, onRefresh }) => {
-  const { burnCNFT, isProcessing } = useBurnCNFT();
+  const { burnCNFT, burnMultipleCNFTs, isProcessing } = useBurnCNFT();
   const [expandedCollection, setExpandedCollection] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [selectionMode, setSelectionMode] = useState<'none' | 'individual' | 'collection' | 'all'>('none');
@@ -85,6 +85,7 @@ export const CNFTList: React.FC<CNFTListProps> = ({ cnfts, onRefresh }) => {
     } else {
       console.error('Burn failed:', result.error);
     }
+    return result;
   }, [burnCNFT, onRefresh]);
 
   const handleCollectionClick = (collection: string) => {
@@ -138,6 +139,35 @@ export const CNFTList: React.FC<CNFTListProps> = ({ cnfts, onRefresh }) => {
     return 'partial';
   };
 
+  const handleBulkBurn = async (selectedCnfts: CNFT[]) => {
+    if (window.confirm(`Are you sure you want to burn ${selectedCnfts.length} selected cNFTs? This action cannot be undone.`)) {
+      console.log('Starting bulk burn process...');
+      const results = await burnMultipleCNFTs(selectedCnfts);
+      
+      // Check if all burns were successful
+      const allSuccessful = results.every(result => result.success);
+      if (allSuccessful) {
+        console.log('All burns successful, refreshing list...');
+        await onRefresh();
+        setSelectedItems(new Set());  // Clear selections after successful burn
+      } else {
+        console.error('Some burns failed:', results.filter(r => !r.success));
+      }
+    }
+  };
+
+  // Update the burn button click handlers
+  const handleBurnSelectedClick = async () => {
+    const selectedCnfts = cnfts.filter(cnft => selectedItems.has(cnft.id));
+    await handleBulkBurn(selectedCnfts);
+  };
+
+  // Update the collection burn handler
+  const handleBurnCollectionSelected = async (collectionCnfts: CNFT[]) => {
+    const selectedCnfts = collectionCnfts.filter(cnft => selectedItems.has(cnft.id));
+    await handleBulkBurn(selectedCnfts);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex gap-2 justify-end p-4">
@@ -154,20 +184,9 @@ export const CNFTList: React.FC<CNFTListProps> = ({ cnfts, onRefresh }) => {
           {selectedItems.size === cnfts.length ? 'Deselect All' : 'Select All'}
         </button>
 
-        {/* Add Burn Selected button */}
         {selectedItems.size > 0 && (
           <button
-            onClick={async () => {
-              if (window.confirm(`Are you sure you want to burn ${selectedItems.size} selected cNFTs? This action cannot be undone.`)) {
-                const selectedCnfts = cnfts.filter(cnft => selectedItems.has(cnft.id));
-                
-                for (const cnft of selectedCnfts) {
-                  await handleBurn(cnft);
-                }
-                // Clear selections after burning
-                setSelectedItems(new Set());
-              }
-            }}
+            onClick={handleBurnSelectedClick}
             className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded flex items-center gap-2"
           >
             <span>Burn Selected</span>
@@ -268,16 +287,11 @@ export const CNFTList: React.FC<CNFTListProps> = ({ cnfts, onRefresh }) => {
                 {/* Burn Selected button */}
                 {selectedItems.size > 0 && (
                   <button
-                    onClick={async () => {
-                      if (window.confirm(`Are you sure you want to burn ${selectedItems.size} selected cNFTs? This action cannot be undone.`)) {
-                        const selectedCnfts = collections
-                          .find(g => g.collection === expandedCollection)
-                          ?.cnfts.filter(cnft => selectedItems.has(cnft.id)) || [];
-                        
-                        for (const cnft of selectedCnfts) {
-                          await handleBurn(cnft);
-                        }
-                      }
+                    onClick={() => {
+                      const collectionCnfts = collections
+                        .find(g => g.collection === expandedCollection)
+                        ?.cnfts || [];
+                      handleBurnCollectionSelected(collectionCnfts);
                     }}
                     className="text-sm bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded flex items-center gap-2"
                   >

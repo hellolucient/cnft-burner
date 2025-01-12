@@ -49,8 +49,17 @@ export default async function handler(
         collectionName: item.grouping.find((g: any) => g.group_key === 'collection')?.collection_metadata?.name || '',
         treeAddress: item.compression.tree,
         leafIndex: item.compression.leaf_id,
-        assetHash: item.compression.asset_hash
+        assetHash: item.compression.asset_hash,
+        ownership: {
+          delegated: item.ownership?.delegated ?? false,
+          delegate: item.ownership?.delegate ?? null,
+          owner: item.ownership?.owner ?? owner.toString()
+        }
       }));
+
+    console.log('API Response - First Item:', data.result.items[0]?.ownership);
+    console.log('Mapped CNFTs - First Item:', cnfts[0]);
+    console.log('Delegated Count:', cnfts.filter(c => c.ownership?.delegated).length);
 
     return res.status(200).json(cnfts);
   } catch (error) {

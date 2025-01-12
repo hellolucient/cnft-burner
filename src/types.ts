@@ -8,6 +8,11 @@ export interface CNFT {
   treeAddress: string;
   leafIndex: number;
   assetHash: string;
+  ownership: {
+    delegated: boolean;
+    delegate: string | null;
+    owner: string;
+  };
 }
 
 export interface BurnResult {

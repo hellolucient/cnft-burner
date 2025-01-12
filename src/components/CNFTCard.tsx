@@ -1,9 +1,9 @@
-import { CNFT } from '@/types';
+import { CNFT, BurnResult } from '@/types';
 import { useState } from 'react';
 
 interface CNFTCardProps {
   cnft: CNFT;
-  onBurn: (cnft: CNFT) => Promise<void>;
+  onBurn: (cnft: CNFT) => Promise<BurnResult>;
   isLoading?: boolean;
   size?: 'normal' | 'small';
   isSelected?: boolean;
@@ -20,7 +20,10 @@ export const CNFTCard: React.FC<CNFTCardProps> = ({ cnft, onBurn, isLoading, siz
     if (window.confirm('Are you sure you want to burn this cNFT? This action cannot be undone.')) {
       try {
         setIsBurning(true);
-        await onBurn(cnft);
+        const result = await onBurn(cnft);
+        if (result.success) {
+          console.log('View transaction:', `https://solscan.io/tx/${result.signature}`);
+        }
         setIsBurnt(true);
       } finally {
         setIsBurning(false);
@@ -28,12 +31,25 @@ export const CNFTCard: React.FC<CNFTCardProps> = ({ cnft, onBurn, isLoading, siz
     }
   };
 
+  console.log('CNFTCard Delegation:', {
+    id: cnft.id,
+    name: cnft.name,
+    delegated: cnft.ownership?.delegated,
+    delegate: cnft.ownership?.delegate
+  });
+
   if (isBurnt) return null;
 
   const sizeClasses = size === 'small' ? 'w-3/4 mx-auto' : 'w-full';
 
   return (
     <div className={`relative border rounded-lg p-2 bg-white shadow-sm hover:shadow-md transition-shadow ${sizeClasses}`}>
+      {cnft.ownership?.delegated && (
+        <div 
+          className="absolute top-1 left-1 w-2 h-2 bg-blue-500 rounded-full" 
+          title="Delegated NFT"
+        />
+      )}
       {onSelect && (
         <button
           onClick={(e) => {
